@@ -66,11 +66,6 @@ const addCategoryBtn = document.getElementById("addCategory");
 const archiveListEl = document.getElementById("archiveList");
 const categoryChartEl = document.getElementById("categoryChart");
 
-// (Neu) Versuch, vorhandenen Button zu finden:
-let clearMonthHistoryBtn =
-  document.getElementById("clearMonthHistoryBtn") ||
-  document.getElementById("clearTransactionsBtn");
-
 // Menu
 const menuButton = document.getElementById("menuButton");
 const menuOverlay = document.getElementById("menuOverlay");
@@ -95,6 +90,9 @@ const themeButtons = document.querySelectorAll("[data-theme-select]");
 const exportCSVBtn = document.getElementById("exportCSV");
 const exportWordBtn = document.getElementById("exportWord");
 const exportChartBtn = document.getElementById("exportChart");
+
+// NEU: Verlauf löschen
+const clearHistoryBtn = document.getElementById("clearHistory");
 
 // Chart
 let chartInstance = null;
@@ -121,26 +119,6 @@ document.addEventListener("DOMContentLoaded", () => {
   renderArchive();
   updateBudgetDisplay();
   renderChart();
-
-  // (Neu) Falls Button nicht im HTML vorhanden ist, hier erstellen und ins Verlauf-Tab einfügen:
-  if (!clearMonthHistoryBtn) {
-    const historyTabPanel = document.querySelector("#tab-history .panel");
-    if (historyTabPanel) {
-      clearMonthHistoryBtn = document.createElement("button");
-      clearMonthHistoryBtn.id = "clearMonthHistoryBtn";
-      clearMonthHistoryBtn.type = "button";
-      clearMonthHistoryBtn.textContent = "Monatsverlauf löschen";
-      clearMonthHistoryBtn.className = "btn btn-danger";
-      // etwas Abstand nach unten
-      clearMonthHistoryBtn.style.marginTop = "0.5rem";
-      historyTabPanel.insertBefore(clearMonthHistoryBtn, historyTabPanel.querySelector(".list-panel") || null);
-      // Hinweis: Styling (rot) kommt aus deiner styles.css (.btn-danger), die du bereits hast.
-    }
-  }
-  // (Neu) Listener anhängen (nur wenn Button existiert):
-  if (clearMonthHistoryBtn) {
-    clearMonthHistoryBtn.addEventListener("click", handleClearCurrentMonth);
-  }
 
   // Onboarding modals nur, wenn noch nicht gesetzt
   if (!state.userName) {
@@ -264,38 +242,31 @@ addTxBtn.addEventListener("click", () => {
   renderChart();
 });
 
-// ===============================
-// (Neu) Monatsverlauf löschen
-// ===============================
-function isSameYearMonth(d1, d2) {
-  return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth();
-}
+// NEU: Verlauf löschen
+clearHistoryBtn.addEventListener("click", () => {
+  if (confirm("Möchtest du wirklich den gesamten Verlauf und die Ausgaben dieses Monats löschen?")) {
+    state.transactions = [];
+    state.spentAmount = 0;
+    saveState();
+    updateBudgetDisplay();
+    renderTransactions();
+    renderHistory();
+    renderChart();
+  }
+});
 
-function handleClearCurrentMonth() {
-  const ok = confirm("Möchtest du wirklich alle Transaktionen dieses Monats löschen?");
-  if (!ok) return;
+function updateBudgetDisplay() {
+  const spent = state.transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
+  state.spentAmount = spent;
+  spentEl.textContent = fmtCHF.format(spent);
 
-  const now = new Date();
-  // Filter: behalte nur Transaktionen, die NICHT im aktuellen Monat liegen
-  state.transactions = state.transactions.filter(tx => {
-    try {
-      const txDate = new Date(tx.date);
-      return !isSameYearMonth(txDate, now);
-    } catch {
-      // Falls keine/kaputte Datumangabe: konservativ als 'löschen' behandeln (aktueller Monat)
-      return false;
-    }
-  });
-
-  // Spent neu berechnen und speichern
-  state.spentAmount = state.transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
-  saveState();
-
-  // UI aktualisieren
-  updateBudgetDisplay();
-  renderTransactions();
-  renderHistory();
-  renderChart();
+  const remaining = (state.totalBudget || 0) - spent;
+  remainingEl.textContent = fmtCHF.format(remaining);
+  if (remaining < 200) {
+    remainingEl.classList.add("red-alert");
+  } else {
+    remainingEl.classList.remove("red-alert");
+  }
 }
 
 // ===============================
@@ -342,7 +313,6 @@ function renderChart() {
 
   if (labels.length === 0) return;
 
-  // generate pleasant colors if many categories
   const colors = labels.map((_, i) => `hsl(${(i * 57) % 360} 70% 60%)`);
 
   chartInstance = new Chart(categoryChartEl, {
@@ -416,11 +386,10 @@ menuItems.forEach(item => {
 });
 
 // ===============================
-// Themes (mit Klick-Highlight)
+// Themes
 // ===============================
 function setTheme(theme, persist = true) {
   document.body.className = `theme-${theme}`;
-  // Selected marker
   themeButtons.forEach(btn => {
     const isSelected = btn.dataset.themeSelect === theme;
     btn.setAttribute("data-selected", isSelected ? "true" : "false");
@@ -434,7 +403,6 @@ function setTheme(theme, persist = true) {
 themeButtons.forEach(btn => {
   btn.addEventListener("click", () => {
     const theme = btn.dataset.themeSelect;
-    // kleines Klick-Highlight
     btn.classList.add("is-pressed");
     setTimeout(() => btn.classList.remove("is-pressed"), 180);
     setTheme(theme, true);
@@ -494,10 +462,8 @@ exportWordBtn.addEventListener("click", () => {
 
 exportChartBtn.addEventListener("click", () => {
   if (!categoryChartEl) return;
-  const canvas = categoryChartEl;
-  // Ensure chart exists; if not, render then export
   if (!chartInstance) renderChart();
-  const url = canvas.toDataURL("image/png");
+  const url = categoryChartEl.toDataURL("image/png");
   downloadURL(url, "diagramm.png");
 });
 
