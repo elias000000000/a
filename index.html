@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Dein Budget</title>
+
+  <!-- Schrift -->
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- Styles -->
+  <link href="styles.css" rel="stylesheet" />
+
+  <!-- Libs -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.0.1/docx.min.js" defer></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js" defer></script>
+</head>
+<body class="theme-standard">
+
+  <!-- Safe area for Dynamic Island / Notch (weiß hinterlegt) -->
+  <div class="safe-area"></div>
+
+  <!-- Hamburger-Menü -->
+  <button id="menuButton" class="hamburger-btn" aria-label="Menü öffnen" type="button">☰</button>
+
+  <!-- Overlay-Menü -->
+  <div id="menuOverlay" class="menu-overlay" aria-hidden="true">
+    <div id="menuBackdrop" class="menu-backdrop" aria-hidden="true"></div>
+    <nav class="menu-content" aria-label="Seitennavigation">
+      <button id="closeMenu" class="close-menu" aria-label="Menü schließen" type="button">✕</button>
+      <button class="menu-item" data-tab="budget" type="button">Budget</button>
+      <button class="menu-item" data-tab="listing" type="button">Auflistung</button>
+      <button class="menu-item" data-tab="history" type="button">Verlauf</button>
+      <button class="menu-item" data-tab="categories" type="button">Kategorien</button>
+      <button class="menu-item" data-tab="archive" type="button">Archiv</button>
+      <button class="menu-item" data-tab="settings" type="button">Einstellungen</button>
+    </nav>
+  </div>
+
+  <!-- Header -->
+  <header class="panel header-panel">
+    <h1 id="greeting">Hallo</h1>
+    <h2>Dein Budget für <span id="monthText"></span></h2>
+    <p id="currentDate" class="muted"></p>
+    <p id="quote" class="quote"></p>
+  </header>
+
+  <!-- Tabs -->
+  <main id="appMain">
+    <!-- TAB: Budget -->
+    <section id="tab-budget" class="tab active">
+      <div class="panel">
+        <label for="totalBudget">Gesamtbudget festlegen (CHF):</label>
+        <div class="input-row">
+          <input type="number" id="totalBudget" placeholder="z. B. 2000" inputmode="decimal" />
+          <button id="saveBudget" class="btn btn-primary" type="button">Speichern</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <p>Ausgegeben: <span id="spent">CHF 0.00</span></p>
+        <p>Verfügbar: <span id="remaining" class="big">CHF 0.00</span></p>
+      </div>
+
+      <div class="panel">
+        <h3>Neue Ausgabe hinzufügen</h3>
+        <div class="input-row">
+          <label class="visually-hidden" for="txCategory">Kategorie</label>
+          <select id="txCategory" aria-label="Kategorie wählen"></select>
+
+          <label class="visually-hidden" for="txDesc">Beschreibung</label>
+          <input type="text" id="txDesc" placeholder="Beschreibung" autocomplete="off" />
+
+          <label class="visually-hidden" for="txAmount">Betrag</label>
+          <input type="number" id="txAmount" placeholder="Betrag" inputmode="decimal" />
+
+          <button id="addTx" class="btn btn-primary" aria-label="Ausgabe hinzufügen" type="button">+</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: Auflistung -->
+    <section id="tab-listing" class="tab">
+      <div class="panel">
+        <h3>Kategorien – Diagramm</h3>
+        <canvas id="categoryChart" aria-label="Kreisdiagramm Ausgaben nach Kategorie"></canvas>
+      </div>
+      <div class="panel">
+        <h3>Auflistung</h3>
+        <div id="historyList" class="list-panel"></div>
+      </div>
+    </section>
+
+    <!-- TAB: Verlauf -->
+    <section id="tab-history" class="tab">
+      <div class="panel">
+        <h3>Verlauf</h3>
+        <div id="transactionList" class="list-panel"></div>
+      </div>
+    </section>
+
+    <!-- TAB: Kategorien -->
+    <section id="tab-categories" class="tab">
+      <div class="panel">
+        <h3>Kategorien</h3>
+        <div id="categoriesList" class="chips"></div>
+        <div class="input-row">
+          <label class="visually-hidden" for="newCategoryName">Neue Kategorie</label>
+          <input type="text" id="newCategoryName" placeholder="Neue Kategorie" autocomplete="off" />
+          <button id="addCategory" class="btn btn-primary" aria-label="Kategorie hinzufügen" type="button">+</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB: Archiv -->
+    <section id="tab-archive" class="tab">
+      <div class="panel">
+        <h3>Archiv</h3>
+        <div id="archiveList" class="list-panel"></div>
+      </div>
+    </section>
+
+    <!-- TAB: Einstellungen -->
+    <section id="tab-settings" class="tab">
+      <div class="panel">
+        <h3>Farbschema wählen</h3>
+        <div class="theme-grid">
+          <button class="theme-btn theme-swatch-standard" data-theme-select="standard" type="button">Standard</button>
+          <button class="theme-btn theme-swatch-warm" data-theme-select="warm" type="button">Warm</button>
+          <button class="theme-btn theme-swatch-kalt" data-theme-select="kalt" type="button">Kalt</button>
+          <button class="theme-btn theme-swatch-fancy" data-theme-select="fancy" type="button">Fancy</button>
+          <button class="theme-btn theme-swatch-special" data-theme-select="special" type="button">Special</button>
+          <button class="theme-btn theme-swatch-girly" data-theme-select="girly" type="button">Girly</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Export</h3>
+        <div class="export-grid">
+          <button id="exportCSV" class="btn btn-primary" type="button">Auflistung als CSV</button>
+          <button id="exportWord" class="btn btn-primary" type="button">Auflistung als Word</button>
+          <button id="exportChart" class="btn btn-primary" type="button">Diagramm als PNG</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modals -->
+  <div id="welcomeModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="welcomeTitle">
+    <div class="modal-content">
+      <h3 id="welcomeTitle">Willkommen!</h3>
+      <p>Wie heisst du?</p>
+      <input type="text" id="userName" placeholder="Name" autocomplete="off" />
+      <button id="saveName" class="btn btn-primary" type="button">Speichern</button>
+    </div>
+  </div>
+
+  <div id="infoModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="infoTitle">
+    <div class="modal-content">
+      <h3 id="infoTitle">Info</h3>
+      <p>Ich helfe dir, dein Budget zu planen, Ausgaben zu erfassen und den Überblick zu behalten.</p>
+      <button id="closeInfo" class="btn btn-primary" type="button">Weiter</button>
+    </div>
+  </div>
+
+  <div id="categoryInfoModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="catInfoTitle">
+    <div class="modal-content">
+      <h3 id="catInfoTitle">Kategorien setzen</h3>
+      <p>Lege zuerst deine eigenen Kategorien an. Sie erscheinen dann im Budget-Reiter zur Auswahl.</p>
+      <button id="closeCategoryInfo" class="btn btn-primary" type="button">Weiter</button>
+    </div>
+  </div>
+
+  <div id="paydayModal" class="modal" aria-hidden="true" role="dialog" aria-labelledby="paydayTitle">
+    <div class="modal-content">
+      <h3 id="paydayTitle">Zahltag festlegen</h3>
+      <p>Wähle den Tag (1–28), an dem dein Budget automatisch archiviert und zurückgesetzt wird:</p>
+      <select id="paydaySelect" aria-label="Zahltag auswählen"></select>
+      <button id="savePayday" class="btn btn-primary" type="button">Speichern</button>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="app.js" defer></script>
+</body>
+</html>
