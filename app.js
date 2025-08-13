@@ -48,7 +48,9 @@ function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-// ---------- DOM-Verweise ----------
+// =====================================================
+// DOM-Referenzen
+// =====================================================
 const greetingEl         = document.getElementById("greeting");
 const monthTextEl        = document.getElementById("monthText");
 const currentDateEl      = document.getElementById("currentDate");
@@ -104,7 +106,7 @@ const exportCSVBtn       = document.getElementById("exportCSV");
 const exportWordBtn      = document.getElementById("exportWord");
 const exportChartBtn     = document.getElementById("exportChart");
 
-// NEU: Monats-Reset-Button (nur aktueller Monat/Verlauf/Ausgaben)
+// Monats-Reset-Button
 const clearMonthBtn      = document.getElementById("clearMonthBtn");
 
 // Chart-Instanz
@@ -135,7 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateBudgetDisplay();
   renderChart();
 
-  // Onboarding-Sequenz
+  // Onboarding
   if (!state.userName) {
     showModal(welcomeModal);
   } else if (!state.seenInfo) {
@@ -146,13 +148,18 @@ document.addEventListener("DOMContentLoaded", () => {
     showModal(paydayModal);
   }
 
-  // Payday-Überwachung
+  // Payday check
   checkPayday();
-  setInterval(checkPayday, 1000 * 60 * 60); // stündlich prüfen
+  setInterval(checkPayday, 1000 * 60 * 60);
+
+  // Monats-Reset-Button aktivieren
+  if (clearMonthBtn) {
+    clearMonthBtn.addEventListener("click", handleClearMonth);
+  }
 });
 
 // =====================================================
-// UI-Helfer
+// Hilfsfunktionen
 // =====================================================
 function initDateAndQuote() {
   const now = new Date();
@@ -185,52 +192,29 @@ function hideModal(modal) {
 }
 
 // =====================================================
-// Event-Listener – Modals / Onboarding
+// Monats-Reset Funktion
 // =====================================================
-saveNameBtn.addEventListener("click", () => {
-  const name = (userNameInput.value || "").trim();
-  if (!name) return;
-  state.userName = name;
-  greetingEl.textContent = `Hallo ${name}`;
-  saveState();
-  hideModal(welcomeModal);
-  if (!state.seenInfo) {
-    showModal(infoModal);
-  } else if (!state.seenCatInfo) {
-    showModal(categoryInfoModal);
-  } else if (!state.payday) {
-    showModal(paydayModal);
-  }
-});
+function handleClearMonth() {
+  const ok = window.confirm(
+    "Willst du wirklich den kompletten Verlauf und alle Ausgaben dieses Monats löschen?\n" +
+    "Diese Aktion kann nicht rückgängig gemacht werden."
+  );
+  if (!ok) return;
 
-closeInfoBtn.addEventListener("click", () => {
-  state.seenInfo = true;
-  saveState();
-  hideModal(infoModal);
-  if (!state.seenCatInfo) {
-    showModal(categoryInfoModal);
-  } else if (!state.payday) {
-    showModal(paydayModal);
-  }
-});
+  state.transactions = [];
+  state.spentAmount = 0;
 
-closeCategoryInfoBtn.addEventListener("click", () => {
-  state.seenCatInfo = true;
   saveState();
-  hideModal(categoryInfoModal);
-  if (!state.payday) showModal(paydayModal);
-});
+  updateBudgetDisplay();
+  renderTransactions();
+  renderHistory();
+  renderChart();
 
-savePaydayBtn.addEventListener("click", () => {
-  const d = parseInt(paydaySelect.value, 10);
-  if (!Number.isInteger(d) || d < 1 || d > 28) return;
-  state.payday = d;
-  saveState();
-  hideModal(paydayModal);
-});
+  alert("Der Verlauf und alle Ausgaben dieses Monats wurden gelöscht.");
+}
 
 // =====================================================
-// Budget & Transaktionen
+// Budget speichern
 // =====================================================
 saveBudgetBtn.addEventListener("click", () => {
   const val = parseFloat(totalBudgetEl.value);
@@ -239,6 +223,7 @@ saveBudgetBtn.addEventListener("click", () => {
   updateBudgetDisplay();
 });
 
+// Transaktion hinzufügen
 addTxBtn.addEventListener("click", () => {
   const category = txCategoryEl.value;
   const desc = (txDescEl.value || "").trim();
@@ -259,32 +244,9 @@ addTxBtn.addEventListener("click", () => {
   renderChart();
 });
 
-// **NEU**: Monats-Reset (nur aktueller Verlauf/Ausgaben)
-if (clearMonthBtn) {
-  clearMonthBtn.addEventListener("click", () => {
-    const ok = window.confirm(
-      "Willst du wirklich den kompletten Verlauf und alle Ausgaben dieses Monats löschen?\n" +
-      "Diese Aktion kann nicht rückgängig gemacht werden."
-    );
-    if (!ok) return;
-
-    // Nur Transaktionen und berechnete Ausgaben dieses Monats entfernen
-    state.transactions = [];
-    state.spentAmount = 0;
-
-    // Speichern & UI aktualisieren
-    saveState();
-    updateBudgetDisplay();
-    renderTransactions();
-    renderHistory();
-    renderChart();
-
-    // Optional: kleines Feedback
-    alert("Der Verlauf und alle Ausgaben dieses Monats wurden gelöscht.");
-  });
-}
-
-// Anzeige-Update
+// =====================================================
+// Anzeige aktualisieren
+// =====================================================
 function updateBudgetDisplay() {
   const spent = state.transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
   state.spentAmount = spent;
@@ -300,7 +262,7 @@ function updateBudgetDisplay() {
 }
 
 // =====================================================
-// Render – Listen & Diagramm
+// Render-Funktionen
 // =====================================================
 function renderTransactions() {
   historyListEl.innerHTML = "";
@@ -343,10 +305,8 @@ function renderChart() {
 
   if (labels.length === 0) return;
 
-  // einfache, aber unterschiedliche Farben
   const colors = labels.map((_, i) => `hsl(${(i * 57) % 360} 70% 60%)`);
 
-  // eslint-disable-next-line no-undef
   chartInstance = new Chart(categoryChartEl, {
     type: "pie",
     data: {
@@ -397,7 +357,7 @@ function renderCategorySelect() {
 }
 
 // =====================================================
-// Hamburger-Menü & Tabs
+// Menü & Tabs
 // =====================================================
 menuButton.addEventListener("click", () => {
   menuOverlay.setAttribute("aria-hidden", "false");
@@ -419,7 +379,7 @@ menuItems.forEach(item => {
 });
 
 // =====================================================
-// Themes (mit Klick-Highlight)
+// Themes
 // =====================================================
 function setTheme(theme, persist = true) {
   document.body.className = `theme-${theme}`;
@@ -500,7 +460,7 @@ exportChartBtn.addEventListener("click", () => {
   downloadURL(url, "diagramm.png");
 });
 
-// Hilfen für Export
+// Hilfsfunktionen Export
 function escapeCSV(s) {
   if (s == null) return "";
   const str = String(s);
@@ -557,5 +517,3 @@ function renderArchive() {
     archiveListEl.appendChild(item);
   });
 }
-
-
