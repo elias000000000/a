@@ -229,14 +229,23 @@ input, select {
   .export-grid { grid-template-columns: 1fr; }
 }
 
-/* --- NEU: Roter Button zum Verlauf löschen --- */
+/* ========================================= */
+/* NEU: Verlauf löschen Button Styles        */
+/* ========================================= */
 .btn-danger {
   background: var(--danger);
-  color: white;
+  color: #fff;
+  font-weight: bold;
+  border-radius: 10px;
+  padding: 0.65rem 1rem;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.2s ease, box-shadow 0.2s ease;
 }
 .btn-danger:hover {
-  background: #c9302c;
+  filter: brightness(1.05);
+  transform: translateY(-1px);
 }
 .btn-danger:active {
-  background: #b52b27;
+  transform: scale(0.98);
 }
