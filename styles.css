@@ -1,146 +1,109 @@
-/* ===============================
-   Global Styles & Resets
-   =============================== */
-
+/* =====================
+   Grundlayout & Reset
+   ===================== */
 * {
-  box-sizing: border-box;
   margin: 0;
   padding: 0;
+  box-sizing: border-box;
 }
 
 html, body {
-  height: 100%;
-}
-
-body {
   font-family: 'Nunito', sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-color);
-  line-height: 1.5;
+  background: var(--bg);
+  color: var(--text);
+  height: 100%;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
 button, input, select {
   font-family: inherit;
-  font-size: 1rem;
 }
-
-input, select {
-  padding: 0.5rem;
-  border: 1px solid var(--border-color);
-  border-radius: 4px;
-}
-
-button {
-  cursor: pointer;
-}
-
-.visually-hidden {
-  position: absolute !important;
-  height: 1px; width: 1px;
-  overflow: hidden;
-  clip: rect(1px, 1px, 1px, 1px);
-}
-
-/* ===============================
-   Theme Variables
-   =============================== */
 
 :root {
-  --bg-color: #fff;
-  --text-color: #000;
-  --border-color: #ccc;
-  --primary-color: #007bff;
-  --primary-text-color: #fff;
+  /* Standard-Theme */
+  --bg: #f4f4f4;
+  --text: #222;
+  --primary: #007bff;
+  --primary-text: #fff;
+  --muted: #777;
+  --panel-bg: #fff;
+  --border: #ddd;
+  --danger: #d9534f;
+  --danger-text: #fff;
 }
 
-body.theme-standard {
-  --bg-color: #ffffff;
-  --text-color: #000000;
-  --border-color: #ccc;
-  --primary-color: #007bff;
-  --primary-text-color: #fff;
+/* Themes */
+.theme-warm {
+  --bg: #fffaf0;
+  --text: #5a3e2b;
+  --primary: #ff8c42;
+  --primary-text: #fff;
+  --muted: #a0806c;
+  --panel-bg: #fff3e6;
+  --border: #e2c8b3;
 }
 
-body.theme-warm {
-  --bg-color: #fff8f0;
-  --text-color: #4a2c2a;
-  --border-color: #d4a373;
-  --primary-color: #e07a5f;
-  --primary-text-color: #fff;
+.theme-kalt {
+  --bg: #f0f8ff;
+  --text: #002b36;
+  --primary: #3399ff;
+  --primary-text: #fff;
+  --muted: #556b72;
+  --panel-bg: #e6f3ff;
+  --border: #b3d1e2;
 }
 
-body.theme-kalt {
-  --bg-color: #f0f8ff;
-  --text-color: #1a2f4a;
-  --border-color: #6c9bd2;
-  --primary-color: #457b9d;
-  --primary-text-color: #fff;
+.theme-fancy {
+  --bg: #1a1a1a;
+  --text: #f0f0f0;
+  --primary: #ff4081;
+  --primary-text: #fff;
+  --muted: #888;
+  --panel-bg: #2a2a2a;
+  --border: #444;
 }
 
-body.theme-fancy {
-  --bg-color: #1a1a2e;
-  --text-color: #eaeaea;
-  --border-color: #16213e;
-  --primary-color: #e94560;
-  --primary-text-color: #fff;
+.theme-special {
+  --bg: #fffbf0;
+  --text: #222;
+  --primary: #00b894;
+  --primary-text: #fff;
+  --muted: #777;
+  --panel-bg: #fffaf0;
+  --border: #ddd;
 }
 
-body.theme-special {
-  --bg-color: #fdf6e3;
-  --text-color: #657b83;
-  --border-color: #93a1a1;
-  --primary-color: #b58900;
-  --primary-text-color: #fff;
+.theme-girly {
+  --bg: #fff0f6;
+  --text: #4a1f35;
+  --primary: #ff69b4;
+  --primary-text: #fff;
+  --muted: #a64d79;
+  --panel-bg: #ffe6f0;
+  --border: #ffb3cc;
 }
 
-body.theme-girly {
-  --bg-color: #fff0f5;
-  --text-color: #4b1c39;
-  --border-color: #e4bad4;
-  --primary-color: #ff69b4;
-  --primary-text-color: #fff;
-}
-
-/* ===============================
-   Layout
-   =============================== */
-
+/* =====================
+   Struktur
+   ===================== */
 .safe-area {
-  background-color: white;
+  height: env(safe-area-inset-top);
+  background: var(--panel-bg);
 }
 
 .header-panel {
   padding: 1rem;
-  background-color: var(--primary-color);
-  color: var(--primary-text-color);
+  border-bottom: 1px solid var(--border);
+  background: var(--panel-bg);
 }
 
 .panel {
-  background: var(--bg-color);
-  border: 1px solid var(--border-color);
+  background: var(--panel-bg);
   padding: 1rem;
   margin: 1rem;
   border-radius: 8px;
-}
-
-.input-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-}
-
-.btn {
-  background: var(--primary-color);
-  color: var(--primary-text-color);
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 4px;
-}
-
-.btn-primary:hover {
-  opacity: 0.9;
+  border: 1px solid var(--border);
 }
 
 .big {
@@ -148,37 +111,141 @@ body.theme-girly {
   font-weight: bold;
 }
 
-.list-panel {
+.muted {
+  color: var(--muted);
+}
+
+.quote {
+  font-style: italic;
+}
+
+/* =====================
+   Buttons
+   ===================== */
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: var(--primary-text);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: var(--danger-text);
+}
+
+/* Hover-Effekte */
+.btn-primary:hover {
+  filter: brightness(0.9);
+}
+
+.btn-danger:hover {
+  filter: brightness(0.9);
+}
+
+/* =====================
+   Input & Select
+   ===================== */
+.input-row {
   display: flex;
-  flex-direction: column;
   gap: 0.5rem;
 }
 
-.list-item {
+input, select {
   padding: 0.5rem;
-  border-bottom: 1px solid var(--border-color);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  flex: 1;
 }
 
-.theme-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
-  gap: 0.5rem;
+/* =====================
+   Tabs
+   ===================== */
+.tab {
+  display: none;
 }
 
-.theme-btn {
-  padding: 1rem;
+.tab.active {
+  display: block;
+}
+
+/* =====================
+   Hamburger-Menü
+   ===================== */
+.hamburger-btn {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  font-size: 1.5rem;
+  background: transparent;
   border: none;
   cursor: pointer;
+  z-index: 1000;
 }
 
-.theme-swatch-standard { background: #007bff; color: #fff; }
-.theme-swatch-warm     { background: #e07a5f; color: #fff; }
-.theme-swatch-kalt     { background: #457b9d; color: #fff; }
-.theme-swatch-fancy    { background: #e94560; color: #fff; }
-.theme-swatch-special  { background: #b58900; color: #fff; }
-.theme-swatch-girly    { background: #ff69b4; color: #fff; }
+.menu-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
+  z-index: 999;
+}
 
-.export-grid {
+.menu-overlay.active {
+  display: block;
+}
+
+.menu-backdrop {
+  position: absolute;
+  inset: 0;
+}
+
+.menu-content {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 70%;
+  max-width: 300px;
+  background: var(--panel-bg);
+  height: 100%;
+  padding: 1rem;
+  box-shadow: 2px 0 5px rgba(0,0,0,0.2);
+}
+
+.close-menu {
+  font-size: 1.2rem;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.menu-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.menu-item:hover {
+  color: var(--primary);
+}
+
+/* =====================
+   Listen & Chips
+   ===================== */
+.list-panel {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
@@ -191,85 +258,81 @@ body.theme-girly {
 }
 
 .chip {
-  padding: 0.5rem 0.75rem;
-  background: var(--border-color);
-  border-radius: 16px;
+  background: var(--primary);
+  color: var(--primary-text);
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.9rem;
 }
 
-/* ===============================
-   Hamburger Menu
-   =============================== */
-
-.hamburger-btn {
-  position: fixed;
-  top: 1rem;
-  left: 1rem;
-  z-index: 1001;
-  background: var(--primary-color);
-  color: var(--primary-text-color);
-  border: none;
-  border-radius: 4px;
-  padding: 0.5rem 0.75rem;
+/* =====================
+   Diagramm
+   ===================== */
+canvas {
+  max-width: 100%;
 }
 
-.menu-overlay {
-  position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  display: none;
-  z-index: 1000;
-}
-
-.menu-backdrop {
-  position: absolute;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.5);
-}
-
-.menu-content {
-  position: relative;
-  background: var(--bg-color);
-  width: 250px;
-  max-width: 80%;
-  height: 100%;
-  padding: 1rem;
-  display: flex;
-  flex-direction: column;
-}
-
-.menu-item {
-  background: none;
-  border: none;
-  padding: 1rem;
-  text-align: left;
-}
-
-.close-menu {
-  align-self: flex-end;
-  background: none;
-  border: none;
-  font-size: 1.5rem;
-}
-
-/* ===============================
-   Modal
-   =============================== */
-
+/* =====================
+   Modals
+   ===================== */
 .modal {
-  display: none;
   position: fixed;
-  top: 0; left: 0;
-  width: 100%; height: 100%;
-  background: rgba(0,0,0,0.6);
-  z-index: 1002;
-  align-items: center;
+  inset: 0;
+  background: rgba(0,0,0,0.5);
+  display: none;
   justify-content: center;
+  align-items: center;
+  z-index: 2000;
 }
 
 .modal-content {
-  background: var(--bg-color);
-  padding: 1.5rem;
+  background: var(--panel-bg);
+  padding: 2rem;
   border-radius: 8px;
   max-width: 90%;
+}
+
+.modal.active {
+  display: flex;
+}
+
+/* =====================
+   Export Grid
+   ===================== */
+.export-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+/* =====================
+   Theme Auswahl Grid
+   ===================== */
+.theme-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.theme-btn {
+  flex: 1;
+  padding: 0.5rem;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.theme-swatch-standard { background: #f4f4f4; }
+.theme-swatch-warm { background: #fffaf0; }
+.theme-swatch-kalt { background: #f0f8ff; }
+.theme-swatch-fancy { background: #1a1a1a; color: #fff; }
+.theme-swatch-special { background: #fffbf0; }
+.theme-swatch-girly { background: #fff0f6; }
+
+/* =====================
+   NEU: Monatsverlauf löschen Button
+   ===================== */
+#clearMonthlyHistory {
+  margin-top: 1rem;
+  width: 100%;
 }
