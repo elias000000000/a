@@ -1,23 +1,28 @@
-// ===============================
-// Helper & State
-// ===============================
+// =====================================================
+// Budget-App – Vollständige App-Logik (inkl. Monats-Reset)
+// =====================================================
+
+// Schlüssel für LocalStorage
 const STORAGE_KEY = "budgetApp";
 
+// ---------- Standardzustand ----------
 const defaultState = {
   userName: "",
   totalBudget: 0,
   spentAmount: 0,
-  transactions: [],
+  transactions: [],    // aktueller Monat
   categories: [],
-  payday: null,              // 1..28
-  archive: [],
+  payday: null,        // 1..28
+  archive: [],         // frühere Monate (durch Payday-Archivierung)
   currentTheme: "standard",
   seenInfo: false,
   seenCatInfo: false
 };
 
+// Globale State-Variable
 let state = { ...defaultState };
 
+// Zitate
 const quotes = [
   "Spare in der Zeit, dann hast du in der Not.",
   "Kleine Ausgaben summieren sich schnell.",
@@ -26,9 +31,10 @@ const quotes = [
   "Dein Geld arbeitet für dich, wenn du es lässt."
 ];
 
+// CHF-Formatter
 const fmtCHF = new Intl.NumberFormat("de-CH", { style: "currency", currency: "CHF", minimumFractionDigits: 2 });
 
-// Load from localStorage
+// ---------- Persistenz ----------
 function loadState() {
   try {
     const data = JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
@@ -38,79 +44,88 @@ function loadState() {
   }
 }
 
-// Save to localStorage
 function saveState() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 }
 
-// ===============================
-// DOM
-// ===============================
-const greetingEl = document.getElementById("greeting");
-const monthTextEl = document.getElementById("monthText");
-const currentDateEl = document.getElementById("currentDate");
-const quoteEl = document.getElementById("quote");
-const spentEl = document.getElementById("spent");
-const remainingEl = document.getElementById("remaining");
-const txCategoryEl = document.getElementById("txCategory");
-const txDescEl = document.getElementById("txDesc");
-const txAmountEl = document.getElementById("txAmount");
-const addTxBtn = document.getElementById("addTx");
-const totalBudgetEl = document.getElementById("totalBudget");
-const saveBudgetBtn = document.getElementById("saveBudget");
-const historyListEl = document.getElementById("historyList");
-const transactionListEl = document.getElementById("transactionList");
-const categoriesListEl = document.getElementById("categoriesList");
-const newCategoryNameEl = document.getElementById("newCategoryName");
-const addCategoryBtn = document.getElementById("addCategory");
-const archiveListEl = document.getElementById("archiveList");
-const categoryChartEl = document.getElementById("categoryChart");
+// ---------- DOM-Verweise ----------
+const greetingEl         = document.getElementById("greeting");
+const monthTextEl        = document.getElementById("monthText");
+const currentDateEl      = document.getElementById("currentDate");
+const quoteEl            = document.getElementById("quote");
 
-// Menu
-const menuButton = document.getElementById("menuButton");
-const menuOverlay = document.getElementById("menuOverlay");
-const closeMenuBtn = document.getElementById("closeMenu");
-const menuBackdrop = document.getElementById("menuBackdrop");
-const menuItems = document.querySelectorAll(".menu-item");
+const spentEl            = document.getElementById("spent");
+const remainingEl        = document.getElementById("remaining");
 
-// Modals
-const welcomeModal = document.getElementById("welcomeModal");
-const saveNameBtn = document.getElementById("saveName");
-const userNameInput = document.getElementById("userName");
-const infoModal = document.getElementById("infoModal");
-const closeInfoBtn = document.getElementById("closeInfo");
-const categoryInfoModal = document.getElementById("categoryInfoModal");
+const txCategoryEl       = document.getElementById("txCategory");
+const txDescEl           = document.getElementById("txDesc");
+const txAmountEl         = document.getElementById("txAmount");
+const addTxBtn           = document.getElementById("addTx");
+
+const totalBudgetEl      = document.getElementById("totalBudget");
+const saveBudgetBtn      = document.getElementById("saveBudget");
+
+const historyListEl      = document.getElementById("historyList");     // Auflistung-Tab
+const transactionListEl  = document.getElementById("transactionList"); // Verlauf-Tab
+
+const categoriesListEl   = document.getElementById("categoriesList");
+const newCategoryNameEl  = document.getElementById("newCategoryName");
+const addCategoryBtn     = document.getElementById("addCategory");
+
+const archiveListEl      = document.getElementById("archiveList");
+
+const categoryChartEl    = document.getElementById("categoryChart");
+
+// Menü / Tabs
+const menuButton         = document.getElementById("menuButton");
+const menuOverlay        = document.getElementById("menuOverlay");
+const closeMenuBtn       = document.getElementById("closeMenu");
+const menuBackdrop       = document.getElementById("menuBackdrop");
+const menuItems          = document.querySelectorAll(".menu-item");
+
+// Modals / Onboarding
+const welcomeModal       = document.getElementById("welcomeModal");
+const saveNameBtn        = document.getElementById("saveName");
+const userNameInput      = document.getElementById("userName");
+
+const infoModal          = document.getElementById("infoModal");
+const closeInfoBtn       = document.getElementById("closeInfo");
+
+const categoryInfoModal  = document.getElementById("categoryInfoModal");
 const closeCategoryInfoBtn = document.getElementById("closeCategoryInfo");
-const paydayModal = document.getElementById("paydayModal");
-const paydaySelect = document.getElementById("paydaySelect");
-const savePaydayBtn = document.getElementById("savePayday");
 
-// Settings / Export
-const themeButtons = document.querySelectorAll("[data-theme-select]");
-const exportCSVBtn = document.getElementById("exportCSV");
-const exportWordBtn = document.getElementById("exportWord");
-const exportChartBtn = document.getElementById("exportChart");
+const paydayModal        = document.getElementById("paydayModal");
+const paydaySelect       = document.getElementById("paydaySelect");
+const savePaydayBtn      = document.getElementById("savePayday");
 
-// NEU: Verlauf löschen
-const clearHistoryBtn = document.getElementById("clearHistory");
+// Einstellungen / Export
+const themeButtons       = document.querySelectorAll("[data-theme-select]");
+const exportCSVBtn       = document.getElementById("exportCSV");
+const exportWordBtn      = document.getElementById("exportWord");
+const exportChartBtn     = document.getElementById("exportChart");
 
-// Chart
+// NEU: Monats-Reset-Button (nur aktueller Monat/Verlauf/Ausgaben)
+const clearMonthBtn      = document.getElementById("clearMonthBtn");
+
+// Chart-Instanz
 let chartInstance = null;
 
-// ===============================
+// =====================================================
 // Init
-// ===============================
+// =====================================================
 document.addEventListener("DOMContentLoaded", () => {
   loadState();
 
-  // UI init
   initDateAndQuote();
   initPaydayOptions();
   setTheme(state.currentTheme, false);
 
-  // Restore UI values
-  if (state.userName) greetingEl.textContent = `Hallo ${state.userName}`;
-  if (state.totalBudget) totalBudgetEl.value = String(state.totalBudget);
+  if (state.userName) {
+    greetingEl.textContent = `Hallo ${state.userName}`;
+  }
+  if (state.totalBudget) {
+    totalBudgetEl.value = String(state.totalBudget);
+  }
 
   renderCategories();
   renderCategorySelect();
@@ -120,7 +135,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateBudgetDisplay();
   renderChart();
 
-  // Onboarding modals nur, wenn noch nicht gesetzt
+  // Onboarding-Sequenz
   if (!state.userName) {
     showModal(welcomeModal);
   } else if (!state.seenInfo) {
@@ -131,14 +146,14 @@ document.addEventListener("DOMContentLoaded", () => {
     showModal(paydayModal);
   }
 
-  // Payday-Check
+  // Payday-Überwachung
   checkPayday();
-  setInterval(checkPayday, 1000 * 60 * 60); // stündlich
+  setInterval(checkPayday, 1000 * 60 * 60); // stündlich prüfen
 });
 
-// ===============================
-// UI Helpers
-// ===============================
+// =====================================================
+// UI-Helfer
+// =====================================================
 function initDateAndQuote() {
   const now = new Date();
   const month = now.toLocaleString("de-DE", { month: "long" });
@@ -157,7 +172,9 @@ function initPaydayOptions() {
     opt.textContent = d;
     paydaySelect.appendChild(opt);
   }
-  if (state.payday) paydaySelect.value = state.payday;
+  if (state.payday) {
+    paydaySelect.value = String(state.payday);
+  }
 }
 
 function showModal(modal) {
@@ -167,9 +184,9 @@ function hideModal(modal) {
   modal.setAttribute("aria-hidden", "true");
 }
 
-// ===============================
-// Event Listeners — Modals
-// ===============================
+// =====================================================
+// Event-Listener – Modals / Onboarding
+// =====================================================
 saveNameBtn.addEventListener("click", () => {
   const name = (userNameInput.value || "").trim();
   if (!name) return;
@@ -212,9 +229,9 @@ savePaydayBtn.addEventListener("click", () => {
   hideModal(paydayModal);
 });
 
-// ===============================
+// =====================================================
 // Budget & Transaktionen
-// ===============================
+// =====================================================
 saveBudgetBtn.addEventListener("click", () => {
   const val = parseFloat(totalBudgetEl.value);
   state.totalBudget = isNaN(val) ? 0 : Math.max(0, val);
@@ -242,19 +259,32 @@ addTxBtn.addEventListener("click", () => {
   renderChart();
 });
 
-// NEU: Verlauf löschen
-clearHistoryBtn.addEventListener("click", () => {
-  if (confirm("Möchtest du wirklich den gesamten Verlauf und die Ausgaben dieses Monats löschen?")) {
+// **NEU**: Monats-Reset (nur aktueller Verlauf/Ausgaben)
+if (clearMonthBtn) {
+  clearMonthBtn.addEventListener("click", () => {
+    const ok = window.confirm(
+      "Willst du wirklich den kompletten Verlauf und alle Ausgaben dieses Monats löschen?\n" +
+      "Diese Aktion kann nicht rückgängig gemacht werden."
+    );
+    if (!ok) return;
+
+    // Nur Transaktionen und berechnete Ausgaben dieses Monats entfernen
     state.transactions = [];
     state.spentAmount = 0;
+
+    // Speichern & UI aktualisieren
     saveState();
     updateBudgetDisplay();
     renderTransactions();
     renderHistory();
     renderChart();
-  }
-});
 
+    // Optional: kleines Feedback
+    alert("Der Verlauf und alle Ausgaben dieses Monats wurden gelöscht.");
+  });
+}
+
+// Anzeige-Update
 function updateBudgetDisplay() {
   const spent = state.transactions.reduce((sum, t) => sum + (t.amount || 0), 0);
   state.spentAmount = spent;
@@ -269,9 +299,9 @@ function updateBudgetDisplay() {
   }
 }
 
-// ===============================
-// Render Lists & Chart
-// ===============================
+// =====================================================
+// Render – Listen & Diagramm
+// =====================================================
 function renderTransactions() {
   historyListEl.innerHTML = "";
   state.transactions.forEach(tx => {
@@ -297,14 +327,14 @@ function renderHistory() {
 function renderChart() {
   if (!categoryChartEl) return;
 
-  const dataByCategory = {};
+  const totals = {};
   state.transactions.forEach(tx => {
-    if (!dataByCategory[tx.category]) dataByCategory[tx.category] = 0;
-    dataByCategory[tx.category] += tx.amount;
+    if (!totals[tx.category]) totals[tx.category] = 0;
+    totals[tx.category] += tx.amount;
   });
 
-  const labels = Object.keys(dataByCategory);
-  const data = Object.values(dataByCategory);
+  const labels = Object.keys(totals);
+  const data = Object.values(totals);
 
   if (chartInstance) {
     chartInstance.destroy();
@@ -313,8 +343,10 @@ function renderChart() {
 
   if (labels.length === 0) return;
 
+  // einfache, aber unterschiedliche Farben
   const colors = labels.map((_, i) => `hsl(${(i * 57) % 360} 70% 60%)`);
 
+  // eslint-disable-next-line no-undef
   chartInstance = new Chart(categoryChartEl, {
     type: "pie",
     data: {
@@ -328,9 +360,9 @@ function renderChart() {
   });
 }
 
-// ===============================
+// =====================================================
 // Kategorien
-// ===============================
+// =====================================================
 addCategoryBtn.addEventListener("click", () => {
   const name = (newCategoryNameEl.value || "").trim();
   if (!name) return;
@@ -364,9 +396,9 @@ function renderCategorySelect() {
   });
 }
 
-// ===============================
+// =====================================================
 // Hamburger-Menü & Tabs
-// ===============================
+// =====================================================
 menuButton.addEventListener("click", () => {
   menuOverlay.setAttribute("aria-hidden", "false");
 });
@@ -380,14 +412,15 @@ menuItems.forEach(item => {
   item.addEventListener("click", () => {
     document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
     const target = item.getAttribute("data-tab");
-    document.getElementById(`tab-${target}`).classList.add("active");
+    const el = document.getElementById(`tab-${target}`);
+    if (el) el.classList.add("active");
     menuOverlay.setAttribute("aria-hidden", "true");
   });
 });
 
-// ===============================
-// Themes
-// ===============================
+// =====================================================
+// Themes (mit Klick-Highlight)
+// =====================================================
 function setTheme(theme, persist = true) {
   document.body.className = `theme-${theme}`;
   themeButtons.forEach(btn => {
@@ -409,9 +442,9 @@ themeButtons.forEach(btn => {
   });
 });
 
-// ===============================
-// Exports
-// ===============================
+// =====================================================
+// Exporte
+// =====================================================
 exportCSVBtn.addEventListener("click", () => {
   let csv = "Datum,Kategorie,Beschreibung,Betrag\n";
   state.transactions.forEach(tx => {
@@ -428,10 +461,10 @@ exportWordBtn.addEventListener("click", () => {
   const rows = [];
   rows.push(new TableRow({
     children: [
-      new TableCell({ children: [new Paragraph("Datum")], width: { size: 25, type: WidthType.PERCENTAGE } }),
-      new TableCell({ children: [new Paragraph("Kategorie")], width: { size: 25, type: WidthType.PERCENTAGE } }),
+      new TableCell({ children: [new Paragraph("Datum")],      width: { size: 25, type: WidthType.PERCENTAGE } }),
+      new TableCell({ children: [new Paragraph("Kategorie")],  width: { size: 25, type: WidthType.PERCENTAGE } }),
       new TableCell({ children: [new Paragraph("Beschreibung")], width: { size: 30, type: WidthType.PERCENTAGE } }),
-      new TableCell({ children: [new Paragraph("Betrag")], width: { size: 20, type: WidthType.PERCENTAGE } }),
+      new TableCell({ children: [new Paragraph("Betrag")],     width: { size: 20, type: WidthType.PERCENTAGE } }),
     ]
   }));
 
@@ -467,6 +500,7 @@ exportChartBtn.addEventListener("click", () => {
   downloadURL(url, "diagramm.png");
 });
 
+// Hilfen für Export
 function escapeCSV(s) {
   if (s == null) return "";
   const str = String(s);
@@ -481,15 +515,16 @@ function downloadBlob(blob, filename) {
 
 function downloadURL(url, filename) {
   const a = document.createElement("a");
-  a.href = url; a.download = filename;
+  a.href = url;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   a.remove();
 }
 
-// ===============================
+// =====================================================
 // Archivierung (Payday)
-// ===============================
+// =====================================================
 function checkPayday() {
   const today = new Date().getDate();
   if (state.payday && today === Number(state.payday)) {
