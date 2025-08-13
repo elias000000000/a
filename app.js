@@ -511,3 +511,173 @@ function renderArchive() {
     archiveListEl.appendChild(item);
   });
 }
+
+// ==========================
+// Initialisierung & State
+// ==========================
+
+let budget = 0;
+let spent = 0;
+let transactions = JSON.parse(localStorage.getItem("transactions")) || [];
+let categories = JSON.parse(localStorage.getItem("categories")) || [];
+let payday = localStorage.getItem("payday") || null;
+let theme = localStorage.getItem("theme") || "standard";
+let userName = localStorage.getItem("userName") || "";
+
+// ==========================
+// DOM-Referenzen
+// ==========================
+
+const greetingEl = document.getElementById("greeting");
+const monthTextEl = document.getElementById("monthText");
+const currentDateEl = document.getElementById("currentDate");
+const quoteEl = document.getElementById("quote");
+const totalBudgetEl = document.getElementById("totalBudget");
+const spentEl = document.getElementById("spent");
+const remainingEl = document.getElementById("remaining");
+const txCategoryEl = document.getElementById("txCategory");
+const txDescEl = document.getElementById("txDesc");
+const txAmountEl = document.getElementById("txAmount");
+const historyListEl = document.getElementById("historyList");
+const transactionListEl = document.getElementById("transactionList");
+const categoriesListEl = document.getElementById("categoriesList");
+const newCategoryNameEl = document.getElementById("newCategoryName");
+const archiveListEl = document.getElementById("archiveList");
+
+// ==========================
+// Utility-Funktionen
+// ==========================
+
+function saveTransactions() {
+  localStorage.setItem("transactions", JSON.stringify(transactions));
+}
+
+function saveCategories() {
+  localStorage.setItem("categories", JSON.stringify(categories));
+}
+
+function formatCurrency(value) {
+  return `CHF ${value.toFixed(2)}`;
+}
+
+function updateHeader() {
+  const now = new Date();
+  const month = now.toLocaleString("de-DE", { month: "long" });
+  const dateStr = now.toLocaleDateString("de-DE", { weekday: "long", day: "numeric", month: "long", year: "numeric" });
+  monthTextEl.textContent = month;
+  currentDateEl.textContent = dateStr;
+  greetingEl.textContent = userName ? `Hallo ${userName}` : "Hallo";
+}
+
+function updateBudgetDisplay() {
+  spent = transactions.reduce((sum, tx) => sum + tx.amount, 0);
+  spentEl.textContent = formatCurrency(spent);
+  remainingEl.textContent = formatCurrency(budget - spent);
+}
+
+function renderTransactions() {
+  transactionListEl.innerHTML = "";
+  transactions.forEach(tx => {
+    const div = document.createElement("div");
+    div.className = "list-item";
+    div.textContent = `${tx.date} - ${tx.category}: ${tx.desc} (${formatCurrency(tx.amount)})`;
+    transactionListEl.appendChild(div);
+  });
+}
+
+function renderHistoryList() {
+  historyListEl.innerHTML = "";
+  transactions.forEach(tx => {
+    const div = document.createElement("div");
+    div.className = "list-item";
+    div.textContent = `${tx.category}: ${formatCurrency(tx.amount)}`;
+    historyListEl.appendChild(div);
+  });
+}
+
+function renderCategories() {
+  txCategoryEl.innerHTML = "";
+  categoriesListEl.innerHTML = "";
+  categories.forEach(cat => {
+    const option = document.createElement("option");
+    option.value = cat;
+    option.textContent = cat;
+    txCategoryEl.appendChild(option);
+
+    const chip = document.createElement("div");
+    chip.className = "chip";
+    chip.textContent = cat;
+    categoriesListEl.appendChild(chip);
+  });
+}
+
+// ==========================
+// Event-Listener
+// ==========================
+
+document.getElementById("saveBudget").addEventListener("click", () => {
+  const value = parseFloat(totalBudgetEl.value);
+  if (!isNaN(value) && value > 0) {
+    budget = value;
+    localStorage.setItem("budget", budget);
+    updateBudgetDisplay();
+  }
+});
+
+document.getElementById("addTx").addEventListener("click", () => {
+  const category = txCategoryEl.value;
+  const desc = txDescEl.value.trim();
+  const amount = parseFloat(txAmountEl.value);
+  if (!category || !desc || isNaN(amount) || amount <= 0) return;
+
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("de-DE");
+  transactions.push({ category, desc, amount, date: dateStr, month: now.getMonth(), year: now.getFullYear() });
+  saveTransactions();
+  updateBudgetDisplay();
+  renderTransactions();
+  renderHistoryList();
+
+  txDescEl.value = "";
+  txAmountEl.value = "";
+});
+
+document.getElementById("addCategory").addEventListener("click", () => {
+  const name = newCategoryNameEl.value.trim();
+  if (!name || categories.includes(name)) return;
+  categories.push(name);
+  saveCategories();
+  renderCategories();
+  newCategoryNameEl.value = "";
+});
+
+// ==========================
+// Initialisierung
+// ==========================
+
+function init() {
+  budget = parseFloat(localStorage.getItem("budget")) || 0;
+  theme && document.body.classList.add(`theme-${theme}`);
+  renderCategories();
+  updateBudgetDisplay();
+  renderTransactions();
+  renderHistoryList();
+  updateHeader();
+}
+
+init();
+
+// ==========================
+// NEU: Monatsverlauf löschen
+// ==========================
+document.getElementById("clearMonthlyHistory").addEventListener("click", () => {
+  const now = new Date();
+  const thisMonth = now.getMonth();
+  const thisYear = now.getFullYear();
+
+  transactions = transactions.filter(tx => !(tx.month === thisMonth && tx.year === thisYear));
+  saveTransactions();
+  updateBudgetDisplay();
+  renderTransactions();
+  renderHistoryList();
+});
